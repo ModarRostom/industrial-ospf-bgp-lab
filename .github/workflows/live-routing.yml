@@ -1,0 +1,35 @@
+name: Live routing lab validation
+
+on:
+  push:
+    paths:
+      - 'topology.clab.yml'
+      - 'configs/**'
+      - 'scripts/**'
+      - '.github/workflows/live-routing.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  containerlab-routing:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Containerlab v0.82.0
+        run: |
+          curl -fsSL https://get.containerlab.dev -o /tmp/install-containerlab.sh
+          sudo bash /tmp/install-containerlab.sh -v 0.82.0
+          containerlab version
+          docker info --format '{{.ServerVersion}}'
+      - name: Deploy simulated routing lab
+        run: sudo containerlab deploy -t topology.clab.yml
+      - name: Verify OSPF, BGP and end-to-end connectivity
+        run: bash scripts/verify.sh
+      - name: Verify WAN failover and restoration
+        run: bash scripts/failover.sh
+      - name: Destroy lab
+        if: always()
+        run: sudo containerlab destroy -t topology.clab.yml --cleanup || true
