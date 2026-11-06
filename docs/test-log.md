@@ -1,41 +1,67 @@
-# Testprotokoll
+# Testprotokoll / Lab Validation
 
-> Dieses Protokoll wird **erst nach eigener Durchführung** ausgefüllt. Keine Ergebnisse aus der Konfiguration ableiten und als gemessen ausgeben.
+Dieses Protokoll unterscheidet **beobachtete Deploy-Ergebnisse** von **noch nicht durchgeführten Routing-Tests**. Ein laufender Container beweist keine funktionsfähige Routing-Nachbarschaft.
 
-| Feld | Wert |
+## Bisher nachgewiesener Deployment-Stand
+
+| Feld | Beobachtung |
 |---|---|
-| Datum / Umgebung | noch nicht ausgefüllt |
-| Docker / Containerlab Version | noch nicht ermittelt |
-| FRRouting Image | `quay.io/frrouting/frr:containerlab-10.7.1` (konfiguriert) |
-| Ergebnis `make lint` | offen |
-| Ergebnis `make verify` | offen |
-| Ergebnis `make failover` | offen |
+| Datum | 06.11.2026 |
+| Host | Windows 10 (Build 19045.6466), Containerlab-WSL |
+| Containerlab | 0.82.0 |
+| Docker Server | 27.5.1 |
+| FRRouting-Image | `quay.io/frrouting/frr:containerlab-10.7.1` |
+| Linux-Clients | `alpine:3.20` |
+| Deployment | `sudo containerlab deploy -t topology.clab.yml` erfolgreich abgeschlossen |
+| Container | 8/8 als `running` angezeigt (6 FRR-Router, 2 Linux-Hosts) |
+| Nachweis | Konsolenausgabe des lokalen Deployments vom 06.11.2026; noch kein Log/Screenshot im Repository veröffentlicht |
 
-## Sollzustand
+**Offen:** OSPF-Konvergenz, BGP-Sessions, ICMP-Erreichbarkeit und WAN-Failover sind durch das Deployment allein **nicht bestätigt**.
 
-| Test | Erwartung | Ist / Beleg |
+## Routing- und Failover-Tests
+
+| Test | Sollzustand | Ist-Zustand |
 |---|---|---|
-| Core OSPF Neighbor | Edge A und B = Full | offen |
-| Core Default Route | OSPF E1 via Edge A | offen |
-| BGP Sessions | Peerings Established | offen |
-| Transit Plant-Prefix | `10.70.10.0/24` via ISP A | offen |
-| ICMP | Plant -> Service erreichbar | offen |
-| Edge-A-WAN-Ausfall | Core schwenkt via Edge B | offen |
-| Nach Wiederherstellung | Core nutzt wieder Edge A | offen |
+| Statische Konfigurationsprüfung (`make lint`) | Tests und Bash-Syntax erfolgreich | Noch nicht lokal dokumentiert; GitHub Actions separat prüfen |
+| Core OSPF Neighbors | Edge A und B = Full | Nicht geprüft |
+| Core Default Route | OSPF E1 via Edge A | Nicht geprüft |
+| eBGP Sessions | Established | Nicht geprüft |
+| Transit Plant-Prefix | `10.70.10.0/24` vorhanden | Nicht geprüft |
+| ICMP Plant → Service | Erreichbar | Nicht geprüft |
+| ICMP Service → Plant | Erreichbar | Nicht geprüft |
+| Edge-A-Uplink-Ausfall | Core wählt Edge B | Nicht geprüft |
+| Wiederherstellung | Core wählt erneut Edge A | Nicht geprüft |
 
-## Belegbefehle
+## Reproduzierbare Befehle
+
+Im lokalen Verzeichnis `~/industrial-ospf-bgp-lab` ausführen:
 
 ```bash
-make verify
-make failover
-# Optional: Live-Ausgaben in einer Datei sichern
-mkdir -p evidence
-bash scripts/verify.sh | tee evidence/verify.txt
-bash scripts/failover.sh | tee evidence/failover.txt
+# Zuerst die unverändernden Tests
+bash scripts/verify.sh
+
+# Danach den Uplink-Ausfall und die Wiederherstellung testen
+bash scripts/failover.sh
 ```
 
-## Beobachtungen / Korrekturen
+Für ein vollständiges Testprotokoll inklusive Exit-Code:
 
-- [ ] Fehler/Unterschiede festhalten und korrigieren.
-- [ ] Screenshots oder CLI-Ausgaben vor dem Veröffentlichen auf sensible Daten prüfen.
-- [ ] Ergebnisse erst nach einem vollständig reproduzierten Lauf als bestanden markieren.
+```bash
+mkdir -p evidence
+set -o pipefail
+bash scripts/verify.sh 2>&1 | tee evidence/verify.txt
+printf 'verify_exit=%s\n' "${PIPESTATUS[0]}" | tee -a evidence/verify.txt
+
+# Nur nach erfolgreicher Verifikation:
+bash scripts/failover.sh 2>&1 | tee evidence/failover.txt
+printf 'failover_exit=%s\n' "${PIPESTATUS[0]}" | tee -a evidence/failover.txt
+```
+
+**Hinweis:** Der Failover-Test setzt temporär `edge-a:eth3` herunter und versucht, es anschließend automatisch wieder hochzufahren. Nicht in einer produktiven Umgebung ausführen.
+
+## Für die Veröffentlichung
+
+1. Ausgaben manuell prüfen: stimmen Nachbarschaften, Routen, Erreichbarkeit und Restore?
+2. Echte Ergebnisse, Abweichungen und Troubleshooting-Schritte hier dokumentieren.
+3. Nur bereinigte Testlogs/Screenshots ohne Zugangsdaten, Tokens oder Firmeninformationen hochladen.
+4. Kein „Passed“ eintragen, solange der jeweilige Test nicht tatsächlich bestanden wurde.
