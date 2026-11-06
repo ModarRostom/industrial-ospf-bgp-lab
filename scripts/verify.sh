@@ -20,7 +20,7 @@ wait_for() {
 }
 
 has_neighbor() { [[ $(show core 'show ip ospf neighbor' | grep -c 'Full' || true) -eq 2 ]]; }
-has_default() { show core 'show ip route 0.0.0.0/0' | grep -Eq 'O[[:space:]]*>?E1|O.*E1'; }
+has_default() { show core 'show ip route 0.0.0.0/0' | grep -Eq '^O[^[:space:]]*[[:space:]]+0[.]0[.]0[.]0/0'; }
 has_plant_route() { show transit 'show ip route 10.70.10.0/24' | grep -q 'B'; }
 can_reach_service() { node plant ping -c 2 -W 2 198.51.100.10; }
 can_reach_plant() { node service ping -c 2 -W 2 10.70.10.10; }
