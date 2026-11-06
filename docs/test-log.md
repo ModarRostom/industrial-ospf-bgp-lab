@@ -18,23 +18,41 @@ This log distinguishes **observed deployment results** from **unverified routing
 
 ## Automated CI observations
 
-GitHub Actions runs static checks via [static-checks.yml](../.github/workflows/static-checks.yml) and executes a live routing lab via [live-routing.yml](../.github/workflows/live-routing.yml). **Check the latest run results before reporting success.** CI observations apply to GitHub's ephemeral Linux runner, not automatically to the local Windows 10 host.
+The live integration test **passed on November 6, 2026**, on a GitHub-hosted Ubuntu runner:
 
-Earlier live CI output confirmed two OSPF core adjacencies in `Full` state, eBGP peerings carrying prefixes, and an installed OSPF default route via Edge A. Some runs still failed due to verification-script behavior; passing end-to-end connectivity and WAN failover must be demonstrated separately.
+- [Successful live routing workflow (OSPF, BGP, ICMP, failover, recovery)](https://github.com/ModarRostom/industrial-ospf-bgp-lab/actions/runs/42273117707)
+- [Successful static configuration and Bash syntax workflow](https://github.com/ModarRostom/industrial-ospf-bgp-lab/actions/runs/42273117662)
 
-## Validation checklist
+The live workflow deployed eight containers, bootstrapped all six FRRouting instances, ran `scripts/verify.sh`, and ran `scripts/failover.sh`; both scripts exited successfully. The lab was destroyed after the run.
 
-| Test | Expected | Evidence |
+| Test | Expected behavior | Observed in successful CI run |
 |---|---|---|
-| Static configuration and Bash syntax | Pass | GitHub Actions result |
-| Core OSPF neighbors | Edge A and Edge B in Full state | Observed in earlier CI diagnostics |
-| Core default route | OSPF route via Edge A | Observed in earlier CI diagnostics |
-| eBGP peers and prefix exchange | Sessions established and intended prefixes present | Observed in earlier CI diagnostics |
-| Transit production prefix | `10.70.10.0/24` installed | Observed in earlier CI diagnostics |
-| ICMP Plant → Service | Reachable | Pending final verification |
-| ICMP Service → Plant | Reachable | Pending final verification |
-| Edge A WAN failure | Core selects Edge B | Pending final verification |
-| WAN restoration | Core reselects Edge A | Pending final verification |
+| Static tests | Configuration consistency and valid Bash syntax | PASS |
+| Core OSPF neighbors | Edge A and Edge B in `Full` state | PASS |
+| Core default route | OSPF default via Edge A (`eth1`) | PASS |
+| eBGP routing | Production prefix learned at transit | PASS |
+| ICMP Plant → Service | Reachable | PASS |
+| ICMP Service → Plant | Reachable | PASS |
+| Primary uplink failure | Core switches to Edge B (`eth2`) | PASS |
+| Connectivity during failover | External service remains reachable | PASS: 3/3 replies, 0% packet loss in the post-failover ping |
+| Uplink restoration | Core returns to Edge A (`eth1`) | PASS |
+
+**Evidence excerpts from the live workflow:**
+
+```text
+PASS OSPF neighbors (core)
+PASS OSPF default route (core)
+PASS BGP plant prefix (transit)
+PASS ICMP plant -> service
+PASS ICMP service -> plant
+PASS core selected eth1
+PASS core selected eth2
+3 packets transmitted, 3 packets received, 0% packet loss
+Restored edge-a:eth3.
+PASS core selected eth1
+```
+
+**Scope:** These observations were recorded on GitHub's ephemeral Linux runner and do not independently verify the latest local Windows/WSL deployment. The test demonstrates route failover under the simulated edge-to-ISP link outage; it does not establish a production SLA, measured end-to-end convergence time, or hardware redundancy.
 
 ## Reproduce checks locally
 
