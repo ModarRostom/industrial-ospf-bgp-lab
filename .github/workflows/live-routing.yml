@@ -28,9 +28,19 @@ jobs:
         run: sudo containerlab deploy -t topology.clab.yml
       - name: Apply and verify FRR startup configurations
         run: bash scripts/bootstrap.sh
+      - name: Routing diagnostics after bootstrap
+        run: |
+          for router in core edge-a edge-b isp-a isp-b transit; do
+            echo "===== $router ====="
+            docker exec "clab-industrial-routing-$router" vtysh -c 'show ip route' || true
+            docker exec "clab-industrial-routing-$router" vtysh -c 'show bgp ipv4 unicast summary' || true
+          done
+          docker exec clab-industrial-routing-core vtysh -c 'show ip ospf neighbor' || true
       - name: Verify OSPF, BGP and end-to-end connectivity
+        timeout-minutes: 5
         run: bash scripts/verify.sh
       - name: Verify WAN failover and restoration
+        timeout-minutes: 5
         run: bash scripts/failover.sh
       - name: Destroy lab
         if: always()
