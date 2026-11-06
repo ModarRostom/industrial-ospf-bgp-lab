@@ -1,6 +1,6 @@
 # Industrial Routing Lab: OSPF + BGP
 
-Kleines Routing-Lab für ein Produktionsnetz mit zwei unabhängigen WAN-Pfaden. Neben funktionierenden Routing-Nachbarschaften stehen hier kontrollierte Routenankündigungen, nachvollziehbare Pfadwahl und ein reproduzierbarer Uplink-Ausfall im Mittelpunkt.
+Reproduzierbares Routing-Lab für ein simuliertes Produktionsnetz mit zwei unabhängigen WAN-Pfaden. Neben funktionierenden Routing-Nachbarschaften stehen hier kontrollierte Routenankündigungen, nachvollziehbare Pfadwahl und ein reproduzierbarer Uplink-Ausfall im Mittelpunkt.
 
 ![Lab-Topologie](docs/topology.png)
 
@@ -22,7 +22,7 @@ Kleines Routing-Lab für ein Produktionsnetz mit zwei unabhängigen WAN-Pfaden. 
 - Mindestens einige GB freier RAM empfohlen (je nach Host); Internetzugang zum ersten Image-Pull
 - Optional: Python 3 + PyYAML für statische Tests, Graphviz zum Neuzeichnen der Grafik
 
-Containerlab-Befehle werden auf dem Linux-Host ausgeführt. Docker Desktop/WSL benötigt passende Netzwerk- und Privileged-Unterstützung und wurde hier nicht separat geprüft.
+Containerlab-Befehle werden auf dem Linux-Host ausgeführt. **Getestete Deployment-Umgebung:** Windows 10 (Build 19045.6466) mit Containerlab-WSL 0.82.0 und Docker 27.5.1. Acht Container wurden am 06.11.2026 als `running` angezeigt. Die Routing-Funktion wurde dabei noch nicht bestätigt.
 
 ## Schnellstart
 
@@ -76,7 +76,7 @@ Die genaue Adressierung und die Designgrenzen stehen in [Adressplan](docs/addres
 
 ## Teststatus
 
-Die Topologie und die Konfigurationsdateien sind vorbereitet. **Ein vollständiger Live-Lauf mit Docker/Containerlab ist noch nicht dokumentiert.** Statische Tests lassen sich separat mit `make lint` ausführen. Nach einem lokalen Lauf werden Ist-Ergebnisse und eventuelle Korrekturen in [test-log.md](docs/test-log.md) nachgetragen. Bis dahin keine bestandenen Failover- oder Performance-Tests behaupten.
+**Deployment bestätigt (06.11.2026):** Unter Windows 10 / Containerlab-WSL wurden die sechs FRRouting-Router und zwei Alpine-Endgeräte erfolgreich gestartet (8/8 Container `running`). **Die OSPF-/BGP-Nachbarschaften, End-to-End-Konnektivität und der WAN-Failover sind noch nicht durch veröffentlichte Testergebnisse belegt.**\n\nStatische Konfigurations- und Syntaxprüfungen laufen über [GitHub Actions](.github/workflows/static-checks.yml) bei Pushes und Pull Requests; diese ersetzen keine echten Routing-Tests. Der aktuelle Teststand und die nachzuholenden Messungen stehen in [test-log.md](docs/test-log.md).
 
 ## Verwendete Dokumentation
 
