@@ -1,33 +1,33 @@
-# Design-Entscheidungen
+# Network Design Decisions
 
-## Problem
+## Problem statement
 
-Ein kleines Produktionsnetz (`10.70.10.0/24`) soll einen externen Dienst (`198.51.100.10`) erreichen. Zwei WAN-Wege stehen zur Verfügung. Der bevorzugte Zugang darf ausfallen, ohne dass die Verbindung dauerhaft verloren geht.
+A small simulated industrial production network (`10.70.10.0/24`) must reach an external service (`198.51.100.10`). Two WAN connections provide redundancy. Failure of the preferred uplink should not leave the service permanently unreachable.
 
-## Trennung der Routing-Domänen
+## Separation of routing domains
 
-- **OSPF Area 0** verbindet Core und beide Edge-Router. Das Produktionsnetz wird als passives OSPF-Netz angekündigt, d. h. keine OSPF-Hellos in Richtung Client.
-- **eBGP** verbindet Edge A mit ISP A und Edge B mit ISP B. Jeder ISP hängt an einem simulierten Transit-AS.
-- Die Edge-Router akzeptieren vom ISP **nur** `0.0.0.0/0`. Diese Route wird anschließend via `default-information originate` als OSPF E1 in das interne Netz gegeben. Das Kommando enthält absichtlich **kein `always`**. Ohne gelernte Default-Route soll kein toter WAN-Ausgang weiter beworben werden.
-- Die ISP-Router schicken die Default Route nur dann, wenn die externe Service-Route vom Transit-AS bekannt ist (`default-originate route-map HAS-SERVICE`). Damit wird eine Störung **hinter** dem ISP im Lab nicht als funktionierender Ausgang beworben.
-- Das Enterprise-AS kündigt nach außen **nur** `10.70.10.0/24` an. Eine ungefilterte `redistribute ospf`-Konfiguration wäre hier unnötig riskant.
-- Das Transit-AS bevorzugt den Rückweg über ISP A durch `local-preference 200` gegenüber ISP B (`150`). Dies gilt ausschließlich innerhalb des simulierten Transit-AS.
+- **OSPF Area 0** interconnects the core and both edge routers. The production LAN is advertised as a passive OSPF interface, so no OSPF Hello packets are sent to the client.
+- **eBGP** connects Edge A to ISP A and Edge B to ISP B. Each ISP connects to a simulated transit AS.
+- Edge routers accept **only `0.0.0.0/0`** from the ISP. With a learned default route, `default-information originate` advertises an OSPF E1 default internally. The configuration deliberately omits `always`: an edge router should stop advertising a usable exit when its upstream default route disappears.
+- ISP routers originate a default route only if the external service prefix has been learned from the transit AS (`default-originate route-map HAS-SERVICE`). This avoids treating a failed upstream service as a viable exit in the lab.
+- The enterprise AS advertises **only `10.70.10.0/24`** to its upstream neighbors. Broad `redistribute ospf` is intentionally avoided.
+- The transit AS prefers the return path through ISP A using BGP local preference `200`, rather than ISP B with `150`. This preference applies within the simulated transit AS.
 
-## Pfadwahl
+## Path selection
 
-Normalfall: Core zu Edge A über OSPF cost 10, zu Edge B cost 30. Beide Default-Routen verwenden denselben OSPF-E1-External-Metric-Wert. Damit soll Edge A bevorzugt werden. Der Rückweg im Transit-AS ist separat per BGP Local Preference festgelegt.
+**Normal state:** The core's OSPF link cost to Edge A is `10`; the cost to Edge B is `30`. Both edge routers originate the same OSPF external type-1 default metric. The core is expected to prefer Edge A. Return traffic is evaluated separately using BGP local preference in the transit AS.
 
-Ausfallfall: Wenn `edge-a:eth3` ausfällt, verliert Edge A den eBGP-Default und zieht die Default-Ankündigung aus OSPF zurück. Der Core sollte anschließend Edge B verwenden. Nach Wiederherstellung sollte der bevorzugte Pfad über Edge A zurückkehren.
+**Failure state:** Bringing down `edge-a:eth3` interrupts Edge A's eBGP session. After the BGP default is withdrawn, Edge A should stop originating the OSPF default; the core should then select Edge B. After the link is restored and routing converges, Edge A should become preferred again.
 
-**Wichtig:** BGP- und OSPF-Konvergenz erfolgt nicht instantan. Die Testskripte warten auf einen Zustandswechsel, sie behaupten keine garantierte Umschaltzeit.
+**Convergence:** BGP and OSPF do not converge instantly. The verification scripts wait for changes in control-plane state; no guaranteed failover time is claimed.
 
-## Warum dieses Design und nicht mehr?
+## Scope
 
-Das Lab testet bewusst IPv4, OSPF, eBGP, Prefix-Filter und Failover. Es setzt **keine** Produktiv-Firewall, kein Kubernetes und kein BFD voraus. Das wären eigene Projekte, die unabhängig getestet werden sollten. Die Linux-Clients verwenden eine einfache Default Route zum jeweils lokalen Router.
+This lab covers IPv4, OSPF, eBGP, prefix filtering, and redundancy. It does **not** include a production firewall, Kubernetes, or BFD. Those topics would require separate designs and independent tests. Both Linux clients use a default route to their local router.
 
-## Grenzen
+## Limitations
 
-- Keine echte OT-Steuerung, keine SPS und keine reale Industriehardware.
-- Kein Live-Internet, kein produktionsfähiges Sicherheitsdesign.
-- Keine Messung von Latenz oder garantierter Hochverfügbarkeit.
-- Prefix-Filter zeigen kontrollierte Ankündigungen, ersetzen aber keine vollständige ISP- oder Zero-Trust-Sicherheitsarchitektur.
+- No real PLCs, industrial controllers, OT operations, or physical industrial hardware.
+- No live Internet service or production-ready security controls.
+- No validated latency, throughput, or high-availability service-level guarantee.
+- Prefix filtering limits route advertisements, but is not a substitute for a full ISP-edge or Zero Trust security architecture.
