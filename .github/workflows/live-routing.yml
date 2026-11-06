@@ -26,6 +26,8 @@ jobs:
           docker info --format '{{.ServerVersion}}'
       - name: Deploy simulated routing lab
         run: sudo containerlab deploy -t topology.clab.yml
+      - name: Apply and verify FRR startup configurations
+        run: bash scripts/bootstrap.sh
       - name: Verify OSPF, BGP and end-to-end connectivity
         run: bash scripts/verify.sh
       - name: Verify WAN failover and restoration
