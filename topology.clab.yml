@@ -8,31 +8,49 @@ topology:
       image: quay.io/frrouting/frr:containerlab-10.7.1
       daemons: [ospfd]
       startup-config: configs/core/frr.conf
+      # Apply integrated frr.conf after daemons start (WSL needs explicit vtysh bootstrap).
+      exec:
+        - vtysh -b
     edge-a:
       kind: frr
       image: quay.io/frrouting/frr:containerlab-10.7.1
       daemons: [ospfd, bgpd]
       startup-config: configs/edge-a/frr.conf
+      # Apply integrated frr.conf after daemons start (WSL needs explicit vtysh bootstrap).
+      exec:
+        - vtysh -b
     edge-b:
       kind: frr
       image: quay.io/frrouting/frr:containerlab-10.7.1
       daemons: [ospfd, bgpd]
       startup-config: configs/edge-b/frr.conf
+      # Apply integrated frr.conf after daemons start (WSL needs explicit vtysh bootstrap).
+      exec:
+        - vtysh -b
     isp-a:
       kind: frr
       image: quay.io/frrouting/frr:containerlab-10.7.1
       daemons: [bgpd]
       startup-config: configs/isp-a/frr.conf
+      # Apply integrated frr.conf after daemons start (WSL needs explicit vtysh bootstrap).
+      exec:
+        - vtysh -b
     isp-b:
       kind: frr
       image: quay.io/frrouting/frr:containerlab-10.7.1
       daemons: [bgpd]
       startup-config: configs/isp-b/frr.conf
+      # Apply integrated frr.conf after daemons start (WSL needs explicit vtysh bootstrap).
+      exec:
+        - vtysh -b
     transit:
       kind: frr
       image: quay.io/frrouting/frr:containerlab-10.7.1
       daemons: [bgpd]
       startup-config: configs/transit/frr.conf
+      # Apply integrated frr.conf after daemons start (WSL needs explicit vtysh bootstrap).
+      exec:
+        - vtysh -b
     plant:
       kind: linux
       image: alpine:3.20
