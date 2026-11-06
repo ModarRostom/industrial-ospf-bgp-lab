@@ -1,7 +1,11 @@
-.PHONY: deploy verify failover down lint diagram
+.PHONY: deploy bootstrap verify failover down lint diagram
 
 deploy:
 	sudo containerlab deploy -t topology.clab.yml
+	bash scripts/bootstrap.sh
+
+bootstrap:
+	bash scripts/bootstrap.sh
 
 verify:
 	bash scripts/verify.sh
@@ -14,7 +18,7 @@ down:
 
 lint:
 	python3 -m unittest discover -s tests -v
-	bash -n scripts/verify.sh scripts/failover.sh
+	bash -n scripts/verify.sh scripts/failover.sh scripts/bootstrap.sh
 
 diagram:
 	dot -Tpng docs/topology.dot -o docs/topology.png
