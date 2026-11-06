@@ -1,0 +1,60 @@
+name: industrial-routing
+
+# Management connectivity is kept separate from the routing lab (eth0).
+topology:
+  nodes:
+    core:
+      kind: frr
+      image: quay.io/frrouting/frr:containerlab-10.7.1
+      daemons: [ospfd]
+      startup-config: configs/core/frr.conf
+    edge-a:
+      kind: frr
+      image: quay.io/frrouting/frr:containerlab-10.7.1
+      daemons: [ospfd, bgpd]
+      startup-config: configs/edge-a/frr.conf
+    edge-b:
+      kind: frr
+      image: quay.io/frrouting/frr:containerlab-10.7.1
+      daemons: [ospfd, bgpd]
+      startup-config: configs/edge-b/frr.conf
+    isp-a:
+      kind: frr
+      image: quay.io/frrouting/frr:containerlab-10.7.1
+      daemons: [bgpd]
+      startup-config: configs/isp-a/frr.conf
+    isp-b:
+      kind: frr
+      image: quay.io/frrouting/frr:containerlab-10.7.1
+      daemons: [bgpd]
+      startup-config: configs/isp-b/frr.conf
+    transit:
+      kind: frr
+      image: quay.io/frrouting/frr:containerlab-10.7.1
+      daemons: [bgpd]
+      startup-config: configs/transit/frr.conf
+    plant:
+      kind: linux
+      image: alpine:3.20
+      exec:
+        - ip address add 10.70.10.10/24 dev eth1
+        - ip route replace default via 10.70.10.1 dev eth1
+    service:
+      kind: linux
+      image: alpine:3.20
+      exec:
+        - ip address add 198.51.100.10/24 dev eth1
+        - ip route replace default via 198.51.100.1 dev eth1
+
+  links:
+    # OSPF area 0, enterprise AS 65010
+    - endpoints: ["core:eth1", "edge-a:eth1"]
+    - endpoints: ["core:eth2", "edge-b:eth1"]
+    - endpoints: ["edge-a:eth2", "edge-b:eth2"]
+    - endpoints: ["core:eth3", "plant:eth1"]
+    # eBGP peerings
+    - endpoints: ["edge-a:eth3", "isp-a:eth1"]
+    - endpoints: ["edge-b:eth3", "isp-b:eth1"]
+    - endpoints: ["isp-a:eth2", "transit:eth1"]
+    - endpoints: ["isp-b:eth2", "transit:eth2"]
+    - endpoints: ["transit:eth3", "service:eth1"]

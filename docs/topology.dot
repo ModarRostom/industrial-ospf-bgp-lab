@@ -1,0 +1,29 @@
+graph NetworkLab {
+  graph [fontname="Arial", fontsize=12, bgcolor="white", pad="0.28", nodesep="0.7", ranksep="0.8", splines=polyline];
+  node [fontname="Arial", shape=box, style="rounded,filled", fillcolor="#f3f6fa", color="#314965", fontcolor="#15283c", penwidth=1.1];
+  edge [fontname="Arial", fontsize=9, fontcolor="#375169", color="#748aa0", penwidth=1.4];
+  { rank=same; "plant"; "core"; }
+  { rank=same; "edge-a"; "edge-b"; }
+  { rank=same; "isp-a"; "isp-b"; }
+  { rank=same; "transit"; }
+  { rank=same; "service"; }
+
+  plant [label="Plant host\n10.70.10.10", fillcolor="#e2f4ed"];
+  core [label="Core\nOSPF Area 0", fillcolor="#dbeafe"];
+  "edge-a" [label="Edge A\nAS 65010", fillcolor="#dbeafe"];
+  "edge-b" [label="Edge B\nAS 65010", fillcolor="#dbeafe"];
+  "isp-a" [label="ISP A\nAS 65110", fillcolor="#fff2d7"];
+  "isp-b" [label="ISP B\nAS 65120", fillcolor="#fff2d7"];
+  transit [label="Transit\nAS 65200", fillcolor="#fff2d7"];
+  service [label="External service\n198.51.100.10", fillcolor="#e2f4ed"];
+
+  plant -- core [label="10.70.10.0/24"];
+  core -- "edge-a" [label="10.0.0.0/30\nOSPF cost 10", color="#1a7cba"];
+  core -- "edge-b" [label="10.0.0.4/30\nOSPF cost 30", color="#1a7cba"];
+  "edge-a" -- "edge-b" [label="10.0.0.8/30\nOSPF", color="#1a7cba"];
+  "edge-a" -- "isp-a" [label="172.16.0.0/30\neBGP", color="#d28c18"];
+  "edge-b" -- "isp-b" [label="172.16.0.4/30\neBGP", color="#d28c18"];
+  "isp-a" -- transit [label="172.16.0.8/30\neBGP", color="#d28c18"];
+  "isp-b" -- transit [label="172.16.0.12/30\neBGP", color="#d28c18"];
+  transit -- service [label="198.51.100.0/24"];
+}
