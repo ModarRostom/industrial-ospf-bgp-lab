@@ -1,50 +1,57 @@
-# Testprotokoll / Lab Validation
+# Test Log and Validation Evidence
 
-Dieses Protokoll unterscheidet **beobachtete Deploy-Ergebnisse** von **noch nicht durchgeführten Routing-Tests**. Ein laufender Container beweist keine funktionsfähige Routing-Nachbarschaft.
+This log distinguishes **observed deployment results** from **unverified routing outcomes**. A running container does not, by itself, demonstrate an established routing adjacency.
 
-## Bisher nachgewiesener Deployment-Stand
+## Local deployment observation
 
-| Feld | Beobachtung |
+| Field | Observed result |
 |---|---|
-| Datum | 06.11.2026 |
-| Host | Windows 10 (Build 19045.6466), Containerlab-WSL |
+| Date | November 6, 2026 |
+| Host | Windows 10 Build 19045.6466, Containerlab-WSL |
 | Containerlab | 0.82.0 |
-| Docker Server | 27.5.1 |
-| FRRouting-Image | `quay.io/frrouting/frr:containerlab-10.7.1` |
-| Linux-Clients | `alpine:3.20` |
-| Deployment | `sudo containerlab deploy -t topology.clab.yml` erfolgreich abgeschlossen |
-| Container | 8/8 als `running` angezeigt (6 FRR-Router, 2 Linux-Hosts) |
-| Nachweis | Konsolenausgabe des lokalen Deployments vom 06.11.2026; noch kein Log/Screenshot im Repository veröffentlicht |
+| Docker Engine | 27.5.1 |
+| FRRouting image | `quay.io/frrouting/frr:containerlab-10.7.1` |
+| Linux client image | `alpine:3.20` |
+| Deployment command | `sudo containerlab deploy -t topology.clab.yml` |
+| Result | 8 of 8 containers reported as `running` (six FRR routers, two Linux clients) |
+| Evidence | Local console output shared during debugging; a raw deployment log has not been committed |
 
-**Offen:** OSPF-Konvergenz, BGP-Sessions, ICMP-Erreichbarkeit und WAN-Failover sind durch das Deployment allein **nicht bestätigt**.
+## Automated CI observations
 
-## Routing- und Failover-Tests
+GitHub Actions runs static checks via [static-checks.yml](../.github/workflows/static-checks.yml) and executes a live routing lab via [live-routing.yml](../.github/workflows/live-routing.yml). **Check the latest run results before reporting success.** CI observations apply to GitHub's ephemeral Linux runner, not automatically to the local Windows 10 host.
 
-| Test | Sollzustand | Ist-Zustand |
+Earlier live CI output confirmed two OSPF core adjacencies in `Full` state, eBGP peerings carrying prefixes, and an installed OSPF default route via Edge A. Some runs still failed due to verification-script behavior; passing end-to-end connectivity and WAN failover must be demonstrated separately.
+
+## Validation checklist
+
+| Test | Expected | Evidence |
 |---|---|---|
-| Statische Konfigurationsprüfung (`make lint`) | Tests und Bash-Syntax erfolgreich | Noch nicht lokal dokumentiert; GitHub Actions separat prüfen |
-| Core OSPF Neighbors | Edge A und B = Full | Nicht geprüft |
-| Core Default Route | OSPF E1 via Edge A | Nicht geprüft |
-| eBGP Sessions | Established | Nicht geprüft |
-| Transit Plant-Prefix | `10.70.10.0/24` vorhanden | Nicht geprüft |
-| ICMP Plant → Service | Erreichbar | Nicht geprüft |
-| ICMP Service → Plant | Erreichbar | Nicht geprüft |
-| Edge-A-Uplink-Ausfall | Core wählt Edge B | Nicht geprüft |
-| Wiederherstellung | Core wählt erneut Edge A | Nicht geprüft |
+| Static configuration and Bash syntax | Pass | GitHub Actions result |
+| Core OSPF neighbors | Edge A and Edge B in Full state | Observed in earlier CI diagnostics |
+| Core default route | OSPF route via Edge A | Observed in earlier CI diagnostics |
+| eBGP peers and prefix exchange | Sessions established and intended prefixes present | Observed in earlier CI diagnostics |
+| Transit production prefix | `10.70.10.0/24` installed | Observed in earlier CI diagnostics |
+| ICMP Plant → Service | Reachable | Pending final verification |
+| ICMP Service → Plant | Reachable | Pending final verification |
+| Edge A WAN failure | Core selects Edge B | Pending final verification |
+| WAN restoration | Core reselects Edge A | Pending final verification |
 
-## Reproduzierbare Befehle
+## Reproduce checks locally
 
-Im lokalen Verzeichnis `~/industrial-ospf-bgp-lab` ausführen:
+Run these commands from `~/industrial-ospf-bgp-lab`:
 
 ```bash
-# Zuerst die unverändernden Tests
+# Apply saved router configurations after all FRR daemons become ready.
+bash scripts/bootstrap.sh
+
+# Verify routing and connectivity without modifying the topology.
 bash scripts/verify.sh
 
-# Danach den Uplink-Ausfall und die Wiederherstellung testen
+# Only after successful verification, test WAN failover and restoration.
 bash scripts/failover.sh
 ```
 
-Für ein vollständiges Testprotokoll inklusive Exit-Code:
+To capture outputs and exit statuses:
 
 ```bash
 mkdir -p evidence
@@ -52,16 +59,16 @@ set -o pipefail
 bash scripts/verify.sh 2>&1 | tee evidence/verify.txt
 printf 'verify_exit=%s\n' "${PIPESTATUS[0]}" | tee -a evidence/verify.txt
 
-# Nur nach erfolgreicher Verifikation:
+# Run only if verification passed.
 bash scripts/failover.sh 2>&1 | tee evidence/failover.txt
 printf 'failover_exit=%s\n' "${PIPESTATUS[0]}" | tee -a evidence/failover.txt
 ```
 
-**Hinweis:** Der Failover-Test setzt temporär `edge-a:eth3` herunter und versucht, es anschließend automatisch wieder hochzufahren. Nicht in einer produktiven Umgebung ausführen.
+**Safety:** The failover script temporarily disables `edge-a:eth3` and attempts to restore it automatically. Use only in the simulated lab.
 
-## Für die Veröffentlichung
+## Publication checklist
 
-1. Ausgaben manuell prüfen: stimmen Nachbarschaften, Routen, Erreichbarkeit und Restore?
-2. Echte Ergebnisse, Abweichungen und Troubleshooting-Schritte hier dokumentieren.
-3. Nur bereinigte Testlogs/Screenshots ohne Zugangsdaten, Tokens oder Firmeninformationen hochladen.
-4. Kein „Passed“ eintragen, solange der jeweilige Test nicht tatsächlich bestanden wurde.
+1. Review the actual neighbor states, routing tables, and connectivity results.
+2. Record failures, root causes, corrections, and re-test results.
+3. Publish only sanitized logs or screenshots containing no tokens, credentials, or company data.
+4. Claim `PASS` only when the corresponding test has actually succeeded.
