@@ -84,14 +84,22 @@ The edge routers do **not** redistribute the entire OSPF domain into BGP. They a
 
 The transit AS uses BGP local preference to favor the return path through ISP A. Outbound path selection within the plant is based on OSPF metrics. These are separate routing decisions.
 
-## Validation status
+## Verified results
 
-- **Deployment observed on Windows 10 / Containerlab-WSL:** 8/8 containers running.
-- **Static checks:** automated with [GitHub Actions](.github/workflows/static-checks.yml).
-- **Live routing checks:** automated with [GitHub Actions](.github/workflows/live-routing.yml). Inspect the most recent workflow run before claiming successful reachability or failover.
-- **Evidence and outstanding checks:** see [test log](docs/test-log.md).
+**Automated live validation passed on November 6, 2026**, on a GitHub-hosted Ubuntu runner. The [successful live workflow run](https://github.com/ModarRostom/industrial-ospf-bgp-lab/actions/runs/42273117707) demonstrates:
 
-Do not present unverified convergence times, failover success, or production-grade reliability as measured results.
+- OSPF: both core adjacencies reached the `Full` state.
+- OSPF: the core installed its default route via Edge A.
+- BGP: the transit router installed the production prefix `10.70.10.0/24`.
+- Reachability: ICMP succeeded from Plant to Service and from Service to Plant.
+- WAN failover: after disabling `edge-a:eth3`, the core selected Edge B, and Plant-to-Service connectivity remained available (3/3 ping replies).
+- Recovery: after restoring `edge-a:eth3`, the core selected the preferred path via Edge A again.
+
+**Static configuration checks also passed:** [successful static workflow run](https://github.com/ModarRostom/industrial-ospf-bgp-lab/actions/runs/42273117662).
+
+**Local environment:** a separate deployment on Windows 10 / Containerlab-WSL reported all eight containers running. The complete live verification and failover results above were measured in GitHub Actions on Linux, **not** on the user's Windows/WSL machine. No production-grade reliability, SLA, or guaranteed convergence time is claimed.
+
+For commands, observed results, and limitations, see the [test log](docs/test-log.md).
 
 ## References
 
