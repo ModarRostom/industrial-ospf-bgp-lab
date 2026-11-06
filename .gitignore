@@ -1,0 +1,15 @@
+# Containerlab output (created by deploy)
+clab-*/
+
+# Python / local development
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Local credentials and machine-specific secrets
+.env
+.env.*
+*.pem
+id_rsa
+id_rsa.pub
