@@ -16,11 +16,11 @@ restore() {
 }
 trap restore EXIT INT TERM
 
-route() { docker exec "$CORE" vtysh -c 'show ip route 0.0.0.0/0'; }
+route() { docker exec "$CORE" vtysh -c 'show ip route'; }
 wait_for_path() {
   local expected="$1" attempt
   for attempt in $(seq 1 36); do
-    if route | grep -q ", ${expected},"; then
+    if route | grep -E '^O[^[:space:]]*[[:space:]]+0[.]0[.]0[.]0/0' | grep -q ", ${expected},"; then
       echo "PASS core selected ${expected}"
       return 0
     fi
