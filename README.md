@@ -1,48 +1,57 @@
 # Industrial Routing Lab: OSPF + BGP
 
-Reproduzierbares Routing-Lab für ein simuliertes Produktionsnetz mit zwei unabhängigen WAN-Pfaden. Neben funktionierenden Routing-Nachbarschaften stehen hier kontrollierte Routenankündigungen, nachvollziehbare Pfadwahl und ein reproduzierbarer Uplink-Ausfall im Mittelpunkt.
+A reproducible routing lab simulating a small industrial network with two independent WAN paths. The focus is on OSPF and eBGP adjacencies, controlled route advertisements, deterministic path selection, and recovery from a primary uplink failure.
 
-![Lab-Topologie](docs/topology.png)
+![Network topology](docs/topology.png)
 
-**Setup:** Containerlab, FRRouting 10.7.1, Alpine Linux. Die FRR-Konfigurationen liegen pro Router unter `configs/` und werden beim Deployment geladen.
+**Stack:** Containerlab 0.82.0, FRRouting 10.7.1, Alpine Linux, Docker. Router configurations are stored under `configs/`.
 
-## Was ist im Lab enthalten?
+## Architecture and objectives
 
-- OSPF Area 0 zwischen Core, Edge A und Edge B
-- Zwei eBGP-Uplinks und simuliertes Transit-AS (kein echter Internetzugang)
-- Explizite Prefix-Listen und konditionale Default-Ankündigung durch die ISPs
-- OSPF-E1-Default aus einem gelernten BGP-Default, ohne `always`
-- Geplante Pfadwahl über OSPF-Cost und BGP Local Preference
-- Ausfalltest: Edge-A-Uplink deaktivieren, alternativen Pfad prüfen, wiederherstellen
+- OSPF Area 0 between Core, Edge A, and Edge B
+- Two independent eBGP uplinks to simulated ISPs and a transit AS (no real Internet access)
+- Explicit prefix lists controlling inbound and outbound advertisements
+- Conditional ISP default-route advertisement when the external service prefix is available
+- OSPF external type-1 default-route origination on the edge routers only when a default route is available
+- Primary and backup path selection using OSPF cost and BGP local preference
+- WAN failover test: disable Edge A's ISP uplink, inspect the backup path, and restore the original link
 
-## Voraussetzungen
+See [network addressing](docs/addressing.md) and [design decisions](docs/design.md) for details.
 
-- Linux-Host oder Linux-VM mit Docker und Containerlab (mit `frr`-Kind, z. B. Containerlab 0.80+)
-- Root-/sudo-Rechte für das Deployment und Zugriffsrechte auf Docker für die Skripte
-- Mindestens einige GB freier RAM empfohlen (je nach Host); Internetzugang zum ersten Image-Pull
-- Optional: Python 3 + PyYAML für statische Tests, Graphviz zum Neuzeichnen der Grafik
+## Prerequisites
 
-Containerlab-Befehle werden auf dem Linux-Host ausgeführt. **Getestete Deployment-Umgebung:** Windows 10 (Build 19045.6466) mit Containerlab-WSL 0.82.0 und Docker 27.5.1. Acht Container wurden am 06.11.2026 als `running` angezeigt. Die Routing-Funktion wurde dabei noch nicht bestätigt.
+- Linux, or Windows 10/11 with Containerlab-WSL, Docker, and Containerlab
+- Permission to run Containerlab and access the Docker engine
+- Enough free memory to run eight containers
+- Internet access for the initial image downloads
+- Optional: Python 3 + PyYAML for static tests, Graphviz to regenerate the topology diagram
 
-## Schnellstart
+**Observed environment:** Windows 10 Build 19045.6466, Containerlab-WSL 0.82.0, Docker 27.5.1. All eight containers started successfully on November 6, 2026. Container startup alone does not prove working routing.
+
+## Quick start
 
 ```bash
-# Aus dem Repository-Verzeichnis
+# Run from the repository root
 sudo containerlab deploy -t topology.clab.yml
 
-# Routing und Konnektivität prüfen
+# Load the integrated FRR configuration after the daemons become ready.
+bash scripts/bootstrap.sh
+
+# Verify OSPF/BGP and reachability before testing failures.
 bash scripts/verify.sh
 
-# Den primären WAN-Link kurz deaktivieren und wiederherstellen
+# Disable and restore the primary ISP uplink in this isolated lab.
 bash scripts/failover.sh
 
-# Lab entfernen
+# Tear down the lab when finished.
 sudo containerlab destroy -t topology.clab.yml --cleanup
 ```
 
-Die Skripte erwarten Zugriff auf `docker` ohne `sudo`. Wenn dein Docker-Setup das nicht erlaubt, die Skripte mit den nötigen Rechten starten. **Nicht im Produktivnetz ausführen.**
+Alternatively, run `make deploy` to deploy and bootstrap, `make verify` to check connectivity, and `make failover` to test recovery.
 
-## Manuell nachsehen
+**Important:** The scripts expect Docker access without `sudo`; adapt permissions to your environment. Run this lab only in an isolated test environment, never on production routers.
+
+## Manual verification
 
 ```bash
 docker exec clab-industrial-routing-core vtysh -c 'show ip ospf neighbor'
@@ -52,36 +61,42 @@ docker exec clab-industrial-routing-transit vtysh -c 'show bgp ipv4 unicast 10.7
 docker exec clab-industrial-routing-plant ping -c 3 198.51.100.10
 ```
 
-## Struktur
+## Repository structure
 
 ```text
 .
-├── topology.clab.yml       # Nodes, Links und Endgeräte
-├── configs/                # FRR-Konfiguration aller sechs Router
-├── scripts/                # Smoke-Test und WAN-Failover
-├── tests/                  # Statische Konsistenz-Checks
+├── topology.clab.yml          # Router and client nodes, links, and interfaces
+├── configs/                   # FRRouting configurations for six routers
+├── scripts/                   # FRR bootstrap, verification, and WAN failover
+├── tests/                     # Static topology and configuration checks
 ├── docs/
-│   ├── topology.png        # Netzplan
-│   ├── addressing.md       # Interfaces, IPs und ASNs
-│   ├── design.md           # Routing-Entscheidungen / Grenzen
-│   └── test-log.md         # Vorlage für eigene Messergebnisse
-└── .github/workflows/      # Statische Tests in GitHub Actions
+│   ├── topology.png           # Network diagram
+│   ├── addressing.md          # IP addressing and AS numbers
+│   ├── design.md              # Routing rationale and limitations
+│   ├── troubleshooting.md     # Diagnostic commands
+│   └── test-log.md            # Actual observations and test status
+└── .github/workflows/         # Static and live routing CI workflows
 ```
 
-## Warum diese Route Policies?
+## Route-policy rationale
 
-Hier wird bewusst **nicht** pauschal OSPF nach BGP redistribuiert: Die Edge-Router exportieren nur `10.70.10.0/24`. Von den Providern lassen sie ausschließlich `0.0.0.0/0` herein. Das begrenzt unbeabsichtigte Ankündigungen. Die internen Router kennen den externen Zielbereich nur über die Default Route, nicht über das ganze BGP-Routing.
+The edge routers do **not** redistribute the entire OSPF domain into BGP. They advertise only `10.70.10.0/24` toward the ISPs and accept only `0.0.0.0/0` from them. This avoids unintended prefix leaks and keeps the core routing table focused on internal routes and a default route.
 
-Die genaue Adressierung und die Designgrenzen stehen in [Adressplan](docs/addressing.md) und [Design-Notizen](docs/design.md). Bei Problemen hilft [Troubleshooting](docs/troubleshooting.md).
+The transit AS uses BGP local preference to favor the return path through ISP A. Outbound path selection within the plant is based on OSPF metrics. These are separate routing decisions.
 
-## Teststatus
+## Validation status
 
-**Deployment bestätigt (06.11.2026):** Unter Windows 10 / Containerlab-WSL wurden die sechs FRRouting-Router und zwei Alpine-Endgeräte erfolgreich gestartet (8/8 Container `running`). **Die OSPF-/BGP-Nachbarschaften, End-to-End-Konnektivität und der WAN-Failover sind noch nicht durch veröffentlichte Testergebnisse belegt.**\n\nStatische Konfigurations- und Syntaxprüfungen laufen über [GitHub Actions](.github/workflows/static-checks.yml) bei Pushes und Pull Requests; diese ersetzen keine echten Routing-Tests. Der aktuelle Teststand und die nachzuholenden Messungen stehen in [test-log.md](docs/test-log.md).
+- **Deployment observed on Windows 10 / Containerlab-WSL:** 8/8 containers running.
+- **Static checks:** automated with [GitHub Actions](.github/workflows/static-checks.yml).
+- **Live routing checks:** automated with [GitHub Actions](.github/workflows/live-routing.yml). Inspect the most recent workflow run before claiming successful reachability or failover.
+- **Evidence and outstanding checks:** see [test log](docs/test-log.md).
 
-## Verwendete Dokumentation
+Do not present unverified convergence times, failover success, or production-grade reliability as measured results.
+
+## References
 
 - [Containerlab: FRRouting kind](https://containerlab.dev/manual/kinds/frr/)
 - [FRRouting: OSPF](https://docs.frrouting.org/en/stable-10.7/ospfd.html)
 - [FRRouting: BGP](https://docs.frrouting.org/en/stable-10.7/bgp.html)
 
-*Nur für Lern- und Demonstrationszwecke in einer isolierten Laborumgebung.*
+*Educational demonstration in an isolated simulated environment. No real industrial control equipment or live Internet connectivity is used.*
