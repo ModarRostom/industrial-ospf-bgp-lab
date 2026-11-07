@@ -1,6 +1,6 @@
 # Case Study: FRRouting Configuration Not Applied During Lab Startup
 
-**Project:** Industrial Routing Lab — OSPF + BGP  
+**Project:** Industrial Routing Lab (OSPF and BGP)  
 **Environment:** Containerlab 0.82.0, FRRouting 10.7.1, Docker; local observations on Windows 10 with Containerlab-WSL, followed by automated integration tests on GitHub-hosted Ubuntu  
 **Incident category:** Routing control-plane initialization and test automation  
 **Status:** Resolved for the documented bootstrap-and-verify workflow; successful OSPF/BGP/ICMP/failover run recorded in CI on November 6, 2026
