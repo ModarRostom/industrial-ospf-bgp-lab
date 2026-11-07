@@ -21,6 +21,8 @@ A reproducible routing lab simulating a small industrial network with two indepe
 
 See [network addressing](docs/addressing.md) and [design decisions](docs/design.md) for details.
 
+**Troubleshooting case study:** [How an FRRouting startup configuration issue was diagnosed and resolved](docs/frr-startup-troubleshooting-case-study.md) — a real investigation covering missing OSPF configuration, daemon readiness, CI false negatives, and successful revalidation.
+
 ## Prerequisites
 
 - Linux, or Windows 10/11 with Containerlab-WSL, Docker, and Containerlab
@@ -77,6 +79,7 @@ docker exec clab-industrial-routing-plant ping -c 3 198.51.100.10
 │   ├── addressing.md          # IP addressing and AS numbers
 │   ├── design.md              # Routing rationale and limitations
 │   ├── troubleshooting.md     # Diagnostic commands
+│   ├── frr-startup-troubleshooting-case-study.md  # Incident diagnosis and resolution
 │   └── test-log.md            # Actual observations and test status
 └── .github/workflows/         # Static and live routing CI workflows
 ```
