@@ -169,4 +169,4 @@ The successful live run was performed on **GitHub-hosted Ubuntu**, not as a comp
 - Differentiate **control-plane faults** from **test-harness false negatives** using detailed CLI diagnostics.
 - Preserve CI logs, reproducible commands, and evidence links, including earlier failures and subsequent fixes.
 
-This case study records an actual troubleshooting sequence and a reproducible correction rather than a hypothetical production incident.
+This case study documents a lab startup issue, the corrective action, and the validation results. It does not describe a production incident.
