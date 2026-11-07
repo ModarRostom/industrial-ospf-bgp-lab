@@ -106,11 +106,11 @@ The transit AS uses BGP local preference to favor the return path through ISP A.
 
 For commands, observed results, and limitations, see the [test log](docs/test-log.md).
 
-## Verified Test Evidence
+## Validation evidence
 
-The screenshots below are captured from the [successful live routing validation on November 6, 2026](https://github.com/ModarRostom/industrial-ospf-bgp-lab/actions/runs/42273117707). They show real GitHub Actions output from the simulated Containerlab environment, rather than illustrative or fabricated CLI output.
+The screenshots were captured from the [successful Containerlab integration test on November 6, 2026](https://github.com/ModarRostom/industrial-ospf-bgp-lab/actions/runs/42273117707). They document the routing and failover results recorded by GitHub Actions.
 
-### 1. OSPF, BGP and end-to-end connectivity
+### OSPF, BGP and end-to-end connectivity
 
 The verification log shows two OSPF adjacencies in `Full` state, an installed default route via Edge A, BGP prefix propagation, and successful bidirectional ICMP checks.
 
@@ -118,7 +118,7 @@ The verification log shows two OSPF adjacencies in `Full` state, an installed de
 
 [Open full-resolution routing verification screenshot](docs/evidence/01-routing-verification.png).
 
-### 2. WAN failover and recovery
+### WAN failover and recovery
 
 The failover log shows the primary path via `eth1`, switching to the backup path via `eth2` after disabling Edge A's ISP interface, three successful service pings during the failover test, and restoration of `eth1`.
 
