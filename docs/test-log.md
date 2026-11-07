@@ -31,8 +31,8 @@ The live workflow deployed eight containers, bootstrapped all six FRRouting inst
 | Core OSPF neighbors | Edge A and Edge B in `Full` state | PASS |
 | Core default route | OSPF default via Edge A (`eth1`) | PASS |
 | eBGP routing | Production prefix learned at transit | PASS |
-| ICMP Plant → Service | Reachable | PASS |
-| ICMP Service → Plant | Reachable | PASS |
+| ICMP Plant to Service | Reachable | PASS |
+| ICMP Service to Plant | Reachable | PASS |
 | Primary uplink failure | Core switches to Edge B (`eth2`) | PASS |
 | Connectivity during failover | External service remains reachable | PASS: 3/3 replies, 0% packet loss in the post-failover ping |
 | Uplink restoration | Core returns to Edge A (`eth1`) | PASS |
