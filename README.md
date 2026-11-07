@@ -1,5 +1,8 @@
 # Industrial Routing Lab: OSPF + BGP
 
+[![Live routing lab validation](https://github.com/ModarRostom/industrial-ospf-bgp-lab/actions/workflows/live-routing.yml/badge.svg)](https://github.com/ModarRostom/industrial-ospf-bgp-lab/actions/workflows/live-routing.yml)
+[![Static configuration checks](https://github.com/ModarRostom/industrial-ospf-bgp-lab/actions/workflows/static-checks.yml/badge.svg)](https://github.com/ModarRostom/industrial-ospf-bgp-lab/actions/workflows/static-checks.yml)
+
 A reproducible routing lab simulating a small industrial network with two independent WAN paths. The focus is on OSPF and eBGP adjacencies, controlled route advertisements, deterministic path selection, and recovery from a primary uplink failure.
 
 ![Network topology](docs/topology.png)
@@ -100,6 +103,28 @@ The transit AS uses BGP local preference to favor the return path through ISP A.
 **Local environment:** a separate deployment on Windows 10 / Containerlab-WSL reported all eight containers running. The complete live verification and failover results above were measured in GitHub Actions on Linux, **not** on the user's Windows/WSL machine. No production-grade reliability, SLA, or guaranteed convergence time is claimed.
 
 For commands, observed results, and limitations, see the [test log](docs/test-log.md).
+
+## Verified Test Evidence
+
+The screenshots below are captured from the [successful live routing validation on November 6, 2026](https://github.com/ModarRostom/industrial-ospf-bgp-lab/actions/runs/42273117707). They show real GitHub Actions output from the simulated Containerlab environment, rather than illustrative or fabricated CLI output.
+
+### 1. OSPF, BGP and end-to-end connectivity
+
+The verification log shows two OSPF adjacencies in `Full` state, an installed default route via Edge A, BGP prefix propagation, and successful bidirectional ICMP checks.
+
+[![OSPF and BGP routing verification evidence](docs/evidence/01-routing-verification.png)](docs/evidence/01-routing-verification.png)
+
+[Open full-resolution routing verification screenshot](docs/evidence/01-routing-verification.png).
+
+### 2. WAN failover and recovery
+
+The failover log shows the primary path via `eth1`, switching to the backup path via `eth2` after disabling Edge A's ISP interface, three successful service pings during the failover test, and restoration of `eth1`.
+
+[![WAN failover and restoration evidence](docs/evidence/02-wan-failover.png)](docs/evidence/02-wan-failover.png)
+
+[Open full-resolution WAN failover screenshot](docs/evidence/02-wan-failover.png). Additional evidence is available in the [evidence directory](docs/evidence/).
+
+**Evidence scope:** These screenshots were obtained from a GitHub-hosted Ubuntu CI run. They are not proof of successful failover on a physical production network or on the local Windows/WSL system.
 
 ## References
 
