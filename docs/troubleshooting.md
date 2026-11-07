@@ -2,6 +2,8 @@
 
 Use these checks if the lab fails to converge or the expected route is missing.
 
+For a documented real incident with commands, analysis, corrective actions, failed CI checks, and a successful re-test, see the [FRRouting startup and verification case study](frr-startup-troubleshooting-case-study.md).
+
 ## Containers do not start
 
 ```bash
