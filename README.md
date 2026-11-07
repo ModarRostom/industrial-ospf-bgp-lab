@@ -21,7 +21,7 @@ A reproducible routing lab simulating a small industrial network with two indepe
 
 See [network addressing](docs/addressing.md) and [design decisions](docs/design.md) for details.
 
-**Troubleshooting case study:** [How an FRRouting startup configuration issue was diagnosed and resolved](docs/frr-startup-troubleshooting-case-study.md) — a real investigation covering missing OSPF configuration, daemon readiness, CI false negatives, and successful revalidation.
+For a detailed diagnosis of the FRRouting startup issue, see the [troubleshooting case study](docs/frr-startup-troubleshooting-case-study.md). It covers the initial symptoms, configuration loading, CI test corrections, and final verification.
 
 ## Prerequisites
 
@@ -68,21 +68,20 @@ docker exec clab-industrial-routing-plant ping -c 3 198.51.100.10
 
 ## Repository structure
 
-```text
-.
-├── topology.clab.yml          # Router and client nodes, links, and interfaces
-├── configs/                   # FRRouting configurations for six routers
-├── scripts/                   # FRR bootstrap, verification, and WAN failover
-├── tests/                     # Static topology and configuration checks
-├── docs/
-│   ├── topology.png           # Network diagram
-│   ├── addressing.md          # IP addressing and AS numbers
-│   ├── design.md              # Routing rationale and limitations
-│   ├── troubleshooting.md     # Diagnostic commands
-│   ├── frr-startup-troubleshooting-case-study.md  # Incident diagnosis and resolution
-│   └── test-log.md            # Actual observations and test status
-└── .github/workflows/         # Static and live routing CI workflows
-```
+| Path | Contents |
+|---|---|
+| `topology.clab.yml` | Containerlab nodes, interfaces, and links |
+| `configs/` | FRRouting configuration for six routers |
+| `scripts/` | Configuration bootstrap, routing checks, and failover test |
+| `tests/` | Static configuration checks |
+| `docs/addressing.md` | IP addressing and AS numbers |
+| `docs/design.md` | Routing design decisions and limitations |
+| `docs/topology.png` | Network diagram |
+| `docs/troubleshooting.md` | Operational troubleshooting commands |
+| `docs/frr-startup-troubleshooting-case-study.md` | Diagnosed startup issue and verified resolution |
+| `docs/test-log.md` | Test observations and evidence |
+| `docs/evidence/` | Screenshots from the live CI validation |
+| `.github/workflows/` | Static and live integration tests |
 
 ## Route-policy rationale
 
