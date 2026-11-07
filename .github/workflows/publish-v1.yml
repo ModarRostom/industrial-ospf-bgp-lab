@@ -1,0 +1,38 @@
+name: Publish validated v1.0.0 release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-v1.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out release notes
+        uses: actions/checkout@v4
+
+      - name: Publish existing v1.0.0 draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: "437440747"
+          VERIFIED_COMMIT: "9eb4197ddacd3e71b779b98d99aeb518e90c02c7"
+        run: |
+          set -euo pipefail
+          release_json="$(gh api "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}")"
+          echo "$release_json" | jq -e '.tag_name == "v1.0.0" and .draft == true' >/dev/null
+          test -s docs/releases/v1.0.0.md
+          gh api -X PATCH "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" \
+            -f name="Industrial Routing Lab v1.0.0 - OSPF, BGP & WAN Failover" \
+            -f tag_name="v1.0.0" \
+            -f target_commitish="$VERIFIED_COMMIT" \
+            -f body="$(cat docs/releases/v1.0.0.md)" \
+            -F draft=false \
+            -F prerelease=false \
+            -f make_latest=true \
+            --jq '{tag_name, draft, prerelease, html_url}'
